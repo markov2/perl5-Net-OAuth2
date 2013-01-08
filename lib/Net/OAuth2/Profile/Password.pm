@@ -4,7 +4,6 @@ use base 'Net::OAuth2::Profile';
 use warnings;
 use strict;
 
-use JSON;
 use URI;
 use Net::OAuth2::AccessToken;
 use HTTP::Request;

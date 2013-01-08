@@ -16,17 +16,8 @@ Net::OAuth2::Profile - OAuth2 access profiles
 
 =chapter SYNOPSIS
 
-  my $google = Net::OAuth2::Profile::WebServer->new
-    ( name           => 'Google Contacts'
-    , client_id      => $id
-    , client_secret  => $secret
-    , site           => 'https://accounts.google.com'
-    , scope          => 'https://www.google.com/m8/feeds/'
-    , authorize_path         => '/o/oauth2/auth'
-    , access_token_path      => '/o/oauth2/token'
-    , protected_resource_url =>
-        'https://www.google.com/m8/feeds/contacts/default/full'
-    );
+  See Net::OAuth2::Profile::WebServer 
+  and Net::OAuth2::Profile::Password 
 
 =chapter DESCRIPTION
 Base class for OAuth `profiles'.  Currently implemented:
@@ -42,13 +33,13 @@ Base class for OAuth `profiles'.  Currently implemented:
 
 =c_method new OPTIONS
 Next to the OPTIONS listed below, it is possible to provide settings
-for each of the commands C<access_token>, C<protected_resource>, C<authorize>,
-and C<refresh_token>.  For each command, you can set
+for each of the <${commands}> C<access_token>, C<protected_resource>,
+C<authorize>, and C<refresh_token>.  For each command, you can set
 
 =over 4
-=item * ${command}_url => URI
+=item * ${command}_url => URI|STRING
 The absolute uri which needs to be used to be addressed to execute the
-C<$command>
+C<$command>.  May be specified as M<URI> object or STRING.
 =item * ${command}_path => PATH
 As previous, but relative to the C<site> option value.
 =item * ${command}_method => 'GET'|'POST'
@@ -151,6 +142,8 @@ sub bearer_token_scheme() {shift->{NOP_scheme}}
 #----------------
 =section Actions
 
+=subsection HTTP
+
 =method request REQUEST, [MORE]
 Send the REQUEST (a M<HTTP::Request> object) to the server, calling
 M<LWP::UserAgent> method C<request()>.  This method will NOT add
@@ -159,10 +152,10 @@ security token information to the message.
 
 sub request($@)
 {   my ($self, $request) = (shift, shift);
-print $request->as_string;
+#print $request->as_string;
     my $response = $self->user_agent->request($request, @_);
-print $response->as_string;
-$response;
+#print $response->as_string;
+#$response;
 }
 
 =method request_auth TOKEN, (REQUEST | (METHOD, URI, [HEADER, CONTENT]))
@@ -327,7 +320,7 @@ sub params_from_response($$)
     }
     else
     {   # application/json is often not correctly configured: is not
-        # an apache predefined.   :(
+        # (yet) an apache pre-configured extension   :(
         if(my $params = eval {decode_json $content} )
         {   # content is JSON
             return ref $params eq 'HASH' ? %$params : @$params;
@@ -346,7 +339,7 @@ sub params_from_response($$)
     die "failed oauth call $why: $error\n$content\n";
 }
 
-sub authorize_method()          {shift->{NOP_authorize_method} }
+sub authorize_method()          {panic}  # user must use autorize url
 sub access_token_method()       {shift->{NOP_access_token_method} }
 sub refresh_token_method()      {shift->{NOP_refresh_token_method} }
 sub protected_resource_method() {shift->{NOP_protected_resource_method} }

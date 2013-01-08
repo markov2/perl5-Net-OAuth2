@@ -2,8 +2,15 @@ package Net::OAuth2::AccessToken;
 use warnings;
 use strict;
 
+our $VERSION;  # to be able to test in devel environment
+
 use JSON        qw/encode_json/;
 use URI::Escape qw/uri_escape/;
+use Encode      qw/find_encoding/;
+
+# Attributes to be saved to preserve the session.
+my @session = qw/access_token token_type refresh_token expires_at
+   scope state auto_refresh/;
 
 # This class name is kept for backwards compatibility: a better name
 # would have been: Net::OAuth2::BearerToken
@@ -14,7 +21,7 @@ use URI::Escape qw/uri_escape/;
 #   http://datatracker.ietf.org/doc/draft-ietf-oauth-v2-http-mac/
 
 =chapter NAME
-Net::OAuth2::AccessToken - OAuth2 bearer token
+ Net::OAuth2::AccessToken - OAuth2 bearer token
 
 =chapter SYNOPSIS
   my $auth  = Net::OAuth2::Profile::WebServer->new(...);
@@ -33,7 +40,8 @@ Net::OAuth2::AccessToken - OAuth2 bearer token
   $token->refresh if $token->expired;
 
 =chapter DESCRIPTION
-This object represents a received bearer token, and offers ways to use it.
+This object represents a received (bearer) token, and offers ways to use it
+and maintain it.
 
 A "bearer token" is an abstract proof of your existence: different
 services or potentially different physical servers are able to exchange
@@ -93,45 +101,55 @@ sub new(@) { my $class = shift; (bless {}, $class)->init({@_}) }
 sub init($)
 {   my ($self, $args) = @_;
 
-    $self->{NOA_expires} = $args->{expires_at}
+    $self->{NOA_expires_at} = $args->{expires_at}
        || ($args->{expires_in} ? time()+$args->{expires_in} : undef);
 
     # client is the pre-v0.50 name
     my $profile = $self->{NOA_profile} = $args->{profile} || $args->{client}
-        or die "accesstoken needs profile object";
+        or die "::AccessToken needs profile object";
 
-    $self->{NOA_token}     = $args->{access_token};
-    $self->{NOA_refresh}   = $args->{refresh_token};
-    $self->{NOA_scope}     = $args->{scope};
-    $self->{NOA_type}      = $args->{token_type};
-    $self->{NOA_autofresh} = $args->{auto_refresh};
-    $self->{NOA_error}     = $args->{error};
-    $self->{NOA_error_uri} = $args->{error_uri};
-    $self->{NOA_error_descr} = $args->{error_description} || $args->{error};
+    $self->{NOA_access_token}  = $args->{access_token};
+    $self->{NOA_refresh_token} = $args->{refresh_token};
+    $self->{NOA_scope}         = $args->{scope};
+    $self->{NOA_token_type}    = $args->{token_type};
+    $self->{NOA_auto_refresh}  = $args->{auto_refresh};
+
+    $self->{NOA_error}         = $args->{error};
+    $self->{NOA_error_uri}     = $args->{error_uri};
+    $self->{NOA_error_descr}   = $args->{error_description} || $args->{error};
     $self;
+}
+
+=method session_thaw SESSION, OPTIONS
+Pass in the output of a M<session_freeze()> call in the past (maybe even
+for an older version of this module) and get the token object revived. This
+SESSION is a HASH.
+
+You may pass any of the parameters for M<new()> as OPTIONS, to overrule
+the values inside the SESSION.
+
+=requires profile M<Net::OAuth2::Profile> object
+=cut
+
+sub session_thaw($%)
+{   my ($class, $session) = (shift, shift);
+    # we can use $session->{net_oauth2_version} to upgrade the info
+    $class->new(%$session, @_);
 }
 
 #--------------
 =section Accessors
 
-=method refresh_token
+=cut
+
 =method scope
 =method token_type
 =method profile
-=method auto_refresh
-=method error
-=method error_uri
-=method error_description
 =cut
 
-sub refresh_token() {shift->{NOA_refresh}}
-sub token_type()    {shift->{NOA_type}}
-sub scope()         {shift->{NOA_scope}}
-sub profile()       {shift->{NOA_profile}}
-sub auto_refresh()  {shift->{NOA_autofresh}}
-sub error()         {shift->{NOA_error}}
-sub error_uri()     {shift->{NOA_error_uri}}
-sub error_description() {shift->{NOA_error_descr}}
+sub token_type() {shift->{NOA_token_type}}
+sub scope()      {shift->{NOA_scope}}
+sub profile()    {shift->{NOA_profile}}
 
 =method access_token
 Returns the (base64 encoded version of the) access token.  The token
@@ -149,15 +167,39 @@ sub access_token()
         if  $self->auto_refresh
         || ($self->refresh_token && $self->expired);
 
-    $self->{NOA_token};
+    $self->{NOA_access_token};
 }
+
+#---------------
+=subsection errors
+When the token is received (hence this object created) it be the
+result of an error.  It is the way the original code was designed...
+
+=method error
+=method error_uri
+=method error_description
+=cut
+
+sub error()      {shift->{NOA_error}}
+sub error_uri()  {shift->{NOA_error_uri}}
+sub error_description() {shift->{NOA_error_descr}}
+
+#---------------
+=subsection Expiration
+
+=method refresh_token
+=method auto_refresh
+=cut
+
+sub refresh_token() {shift->{NOA_refresh_token}}
+sub auto_refresh()  {shift->{NOA_auto_refresh}}
 
 =method expires_at [TIMESTAMP]
 Returns the expiration timestamp of this token (true) or C<undef> (false)
 when it is not set.
 =cut
 
-sub expires_at() { shift->{NOA_expires} }
+sub expires_at() { shift->{NOA_expires_at} }
 
 =method expires_in
 Returns the number of seconds left, before the token is expired.  That
@@ -185,14 +227,59 @@ Change the token.
 
 sub update_token($$$)
 {   my ($self, $token, $type, $exp) = @_;
-    $self->{NOA_token}   = $token;
-    $self->{NOA_type}    = $type if $type;
-    $self->{NOA_expires} = $exp;
+    $self->{NOA_access_token}   = $token;
+    $self->{NOA_token_type}    = $type if $type;
+    $self->{NOA_expires_at} = $exp;
     $token;
 }
 
 #--------------
-=section Action
+=section Actions
+
+=method to_json
+Freeze this object into JSON.  The JSON syntax is also used by the OAuth2
+protocol, so a logical choice to provide.  However, generically, the
+M<session_freeze()> method provided.
+=cut
+
+sub to_json()
+{   my $self = shift;
+    encode_json $self->session_freeze;
+}
+*to_string = \&to_json;  # until v0.50
+
+=method session_freeze OPTIONS
+This returns a SESSION (a flat HASH) containing all token parameters which
+needs to be saved to be able to restore this token later.  This SESSION
+can be passed to M<session_thaw()> to get revived.
+
+Be sure that your storage is character-set aware.  For instance, you
+probably want to set 'mysql_enable_utf8' when you store this in a
+MySQL database.  JSON
+=cut
+
+sub freeze(%)
+{   my ($self, %args) = @_;
+    my %data    = (net_oauth2_version => $VERSION);
+    defined $self->{"NOA_$_"} && ($data{$_} = $self->{"NOA_$_"}) for @session;
+    \%data;
+}
+
+=method refresh
+Refresh the token, even if it has not expired yet.  Returned is the
+new access_token value.
+=cut
+
+sub refresh()
+{   my $self = shift;
+    $self->profile->update_access_token($self);
+}
+
+#--------------
+=subsection HTTP
+
+The token can be encoded in transport protocol in different ways. Using
+these method will add the token to the HTTP messages sent.
 
 =method request REQUEST
 =method get    URI, [HEADER, [CONTENT]]
@@ -206,30 +293,5 @@ sub get    { my $s = shift; $s->profile->request_auth($s, 'GET',    @_) }
 sub post   { my $s = shift; $s->profile->request_auth($s, 'POST',   @_) }
 sub delete { my $s = shift; $s->profile->request_auth($s, 'DELETE', @_) }
 sub put    { my $s = shift; $s->profile->request_auth($s, 'PUT',    @_) }
-
-=method to_string
-Serialize this object into JSON.
-=cut
-
-sub to_string()
-{   my $self = shift;
-    my %data;
-    @data{ qw/access_token token_type refresh_token  expires_at
-              scope        state      auto_refresh/ }
-  = @$self{qw/NOA_token    NOA_type   NOA_refresh    NOA_expires
-              NOA_scope    NOA_state  NOA_autofresh/ };
-
-    encode_json \%data;
-}
-
-=method refresh
-Refresh the token, even if it has not expired yet.  Returned is the
-new access_token value.
-=cut
-
-sub refresh()
-{   my $self = shift;
-    $self->profile->update_access_token($self);
-}
 
 1;

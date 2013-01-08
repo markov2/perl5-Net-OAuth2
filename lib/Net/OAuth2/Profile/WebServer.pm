@@ -5,15 +5,19 @@ use warnings;
 use strict;
 
 use Net::OAuth2::AccessToken;
-use HTTP::Request;
 use MIME::Base64  'encode_base64';
+use Scalar::Util  'blessed';
+
+use HTTP::Request     ();
+use HTTP::Response    ();
+use HTTP::Status      qw(HTTP_TEMPORARY_REDIRECT);
 
 =chapter NAME
 Net::OAuth2::Profile::WebServer - OAuth2 for web-server use
 
 =chapter SYNOPSIS
 
-  my $google = Net::OAuth2::Profile::WebServer->new
+  my $auth = Net::OAuth2::Profile::WebServer->new
     ( name           => 'Google Contacts'
     , client_id      => $id
     , client_secret  => $secret
@@ -25,29 +29,24 @@ Net::OAuth2::Profile::WebServer - OAuth2 for web-server use
         =>  'https://www.google.com/m8/feeds/contacts/default/full'
     );
 
+  # Let user ask for a grant from the resource owner
+  print $auth->authorize_response->as_string;
+  # or, in Plack:   redirect $auth->authorize;
+
+  # Prove your identity at the authorization server
+  my $access_token  = $auth->get_access_token($info->{code});
+
+  # communicate with the resource serve
+  my $response      = $access_token->get('/me');
+  $response->is_success
+      or die "error: " . $response->status_line;
+
+  print "Yay, it worked: " . $response->decoded_content;
+
+
 =chapter DESCRIPTION
-Use OAuth2 in a WebServer context.  The client side of the process has
-three steps, nicely described in
-L<https://tools.ietf.org/html/rfc6749|RFC6749>
-
-=over 4
-=item 1. Send an authorization request to resource owner
-It needs a C<client_id>: usually the name of the service where you want
-get access to.  The answer is a redirect, based on the C<redirection_uri>
-which you usually pass on.  Additional C<scope> and C<state> parameters
-can be needed or useful.  The redirect will provide you with (amongst other
-things) a C<code> parameter.
-
-=item 2. Translate the code into an access token
-With the code, you go to an authorization server which will validate
-your existence.  An access token (and sometimes a refresh token) are
-returned.
-
-=item 3. Address the protected resource
-The access token, usually a 'bearer' token, is added to each request to
-the resource you want to address.  The token may refresh itself when
-needed.
-=back
+Use OAuth2 in a WebServer context.  Read the DETAILS section, far below
+this man-page before you start implementing this interface.
 
 =chapter METHODS
 
@@ -88,12 +87,15 @@ sub referer(;$)
 {   my $s = shift; @_ ? $s->{NOPW_referer} = shift : $s->{NOPW_referer} }
 
 #--------------------
-=section Action
+=section Actions
 
 =method authorize OPTIONS
-Request an authorization code for the session.  Only the most common
-OPTIONS are listed... there may be more: read the docs on what your
-server expects.
+On initial contact of a new user, you have to redirect to the resource
+owner.  Somewhere in the near future, your application will be contacted
+again by the same user but then with an authorization grant code.
+
+Only the most common OPTIONS are listed... there may be more: read the
+docs on what your server expects.
 
 =option  state STRING
 =default state C<undef>
@@ -106,24 +108,57 @@ server expects.
 
 =option  response_type STRING
 =default response_type 'code'
+
+=example
+  my $auth = Net::OAuth2::Profile::WebServer->new(...);
+
+  # From the Plack demo, included in this distribution (on CPAN)
+  get '/get' => sub { redirect $auth->authorize };
+
+  # In generic HTTP, see method authorize_response
+  use HTTP::Status 'HTTP_TEMPORARY_REDIRECT';   # 307
+  print HTTP::Response->new
+    ( HTTP_TEMPORARY_REDIRECT => 'Get authorization grant'
+    , [ Location => $auth->authorize ]
+    )->as_string;
 =cut
 
 sub authorize(@)
 {   my ($self, @req_params) = @_;
-    my $request = $self->build_request
-      ( $self->authorize_method
-      , $self->authorize_url
-      , $self->authorize_params(@req_params)
+
+    # temporary, for backward compatibility warning
+    my $uri_base = $self->SUPER::authorize_url;
+#   my $uri_base = $self->authorize_url;
+
+    my $uri      = blessed $uri_base && $uri_base->isa('URI')
+      ? $uri_base->clone : URI->new($uri_base);
+
+    my $params   = $self->authorize_params(@req_params);
+    $uri->query_form($uri->query_form, %$params);
+    $uri;
+}
+
+# Net::OAuth2 returned the url+params here, but this should return the
+# accessor to the parameter with this name.  The internals of that code
+# was so confused that it filled-in the params multiple times.
+sub authorize_url()
+{   require Carp;
+    Carp::confess("do not use authorize_url() but authorize()! (since v0.50)");
+}
+
+=method authorize_response [REQUEST]
+Convenience wrapper around M<authorize()>, to produce a complete
+M<HTTP::Response> object to be sent back.
+=cut
+
+sub authorize_response(;$)
+{   my ($self, $request) = @_;
+    my $resp = HTTP::Response->new
+      ( HTTP_TEMPORARY_REDIRECT => 'Get authorization grant'
+      , [ Location => $self->authorize ]
       );
-
-    my $ua        = $self->user_agent;
-    my $old_redir = $ua->requests_redirectable;
-    $ua->requests_redirectable([]);
-
-    my $response  = $self->request($request);
-
-    $ua->requests_redirectable($old_redir);
-    $response;
+    $resp->request($request) if $request;
+    $resp;
 }
 
 =method get_access_token CODE, OPTIONS
@@ -146,6 +181,7 @@ sub get_access_token($@)
       , $self->access_token_url
       , $params
       );
+
     my $basic = encode_base64 "$params->{client_id}:$params->{client_secret}";
     $request->headers->header(Authorization => "Basic $basic");
     my $response = $self->request($request);
@@ -193,7 +229,12 @@ sub authorize_params(%)
 {   my $self   = shift;
     my $params = $self->SUPER::authorize_params(@_);
     $params->{response_type} ||= 'code';
-    $params->{redirect_uri}  ||= $self->redirect_uri;
+
+    # should not be required: usually the related between client_id and
+    # redirect_uri is fixed to avoid security issues.
+    my $r = $self->redirect_uri;
+    $params->{redirect_uri}  ||= $r if $r;
+
     $params;
 }
 
@@ -225,5 +266,45 @@ sub build_request($$$)
 
     $request;
 }
+
+#--------------------
+=chapter DETAILS
+
+=section The process
+
+The B<main complication> does not show in the example in the SYNOPSIS,
+not in the plack example included in the distribution: your client session
+can not survive the shown steps: your application behaves like a server,
+not a client.  You need to implement losely coupled server-server
+communication, which is less straight-forward.
+
+First, your application must implement a persistent session (in a database
+or file), which may get called on any weird moment to pass on information.
+Your application must be visible from "outside" and use https.  More than
+enough complications.  Full example needed ;-)
+
+The client side of the process has
+three steps, nicely described in
+L<https://tools.ietf.org/html/rfc6749|RFC6749>
+
+=over 4
+=item 1. Send an authorization request to resource owner
+It needs a C<client_id>: usually the name of the service where you want
+get access to.  The answer is a redirect, based on the C<redirection_uri>
+which you usually pass on.  Additional C<scope> and C<state> parameters
+can be needed or useful.  The redirect will provide you with (amongst other
+things) a C<code> parameter.
+
+=item 2. Translate the code into an access token
+With the code, you go to an authorization server which will validate
+your existence.  An access token (and sometimes a refresh token) are
+returned.
+
+=item 3. Address the protected resource
+The access token, usually a 'bearer' token, is added to each request to
+the resource you want to address.  The token may refresh itself when
+needed.
+=back
+=cut
 
 1;

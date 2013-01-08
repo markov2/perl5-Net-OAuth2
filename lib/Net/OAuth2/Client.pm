@@ -4,7 +4,6 @@ use strict;
 
 use LWP::UserAgent ();
 use URI            ();
-use JSON           qw/decode_json/;
 
 use Net::OAuth2::Profile::WebServer;
 use Net::OAuth2::Profile::Password;

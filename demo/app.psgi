@@ -1,4 +1,13 @@
 #!/usr/bin/env perl
+#
+# This plack demo shows the logic which your website needs to facilitate
+# third-party OAuth2 authorization.
+
+# This code only works when you plack server runs in a single process:
+# otherwise you will need to keep the session information in some
+# shared store, for instance a database.  That makes life considerable
+# harder.
+
 use strict;
 use warnings;
 
@@ -7,7 +16,7 @@ use Net::OAuth2::Client;
 use HTML::Entities;
 
 get '/get/:site_id' => sub {
-    redirect client(params->{site_id})->authorize_url;
+    redirect client(params->{site_id})->authorize;
 };
 
 get '/got/:site_id' => sub {
@@ -19,16 +28,19 @@ get '/got/:site_id' => sub {
     return html_page("Error: " . $access_token->to_string)
         if $access_token->{error};
 
-    my $content = '<h2>Access token retrieved successfully!</h2><p>' . encode_entities($access_token->to_string) . '</p>';
+    my $content = "<h2>Access token retrieved successfully!</h2>\n"
+                . '<p>'.encode_entities($access_token->to_string)."</p>\n";
 
     my $this_site = config->{sites}{$site_id};
-    my $response = $access_token->get($this_site->{protected_resource_url} || $this_site->{protected_resource_path});
+    my $response  = $access_token->get($this_site->{protected_resource_url}
+                 || $this_site->{protected_resource_path});
+
     if ($response->is_success) {
         $content .= "<h2>Protected resource retrieved successfully!</h2>\n"
                  .  '<p>'.encode_entities($response->decoded_content).'</p>';
     }
     else {
-        $content .= '<p>Error: '. $response->status_line.'</p>';
+        $content .= '<p>Error: '. $response->status_line."</p>\n";
     }
     $content =~ s[\n][<br/>\n]g;
     html_page($content);
@@ -40,7 +52,8 @@ get '/' => sub {
         $content .= qq{<p>$v->{name}: <a href="/get/$k">/get/$k</a></p>\n}
             if $v->{client_id} && $v->{client_secret};
     }
-    $content ||= "You haven't configured any sites yet.  Edit your config.yml file!";
+    $content ||= "<p>You haven't configured any sites yet.<br>\n"
+               . "Edit your config.yml file!</p>\n";
     html_page($content);
 };
 

@@ -4,8 +4,7 @@ use warnings;
 use strict;
 
 use lib 'lib', '../lib';
-use Test::More tests => 16;
-use Data::Dumper;
+use Test::More tests => 19;
 
 my $id     = 'my-id';
 my $secret = 'my-secret';
@@ -22,6 +21,7 @@ my $auth = Net::OAuth2::Profile::WebServer->new
 
   , refresh_token_method => 'PUT'
   , access_token_params  => [ tic => 'tac', toe => 0 ]
+  , authorize_params     => [ more => 'and more' ]
   );
 
 isa_ok($auth, 'Net::OAuth2::Profile::WebServer');
@@ -36,9 +36,20 @@ cmp_ok(scalar keys %qp, '==', 2, join(';',%qp));
 cmp_ok($qp{a}, '==', 1);
 cmp_ok($qp{b}, '==', 2);
 
-is($auth->access_token_url,  "$site/a/ccess_token");
-is($auth->authorize_url,     "$site/au/htorize");
-is($auth->authorize_method,  'POST');
+is($auth->access_token_url,   "$site/a/ccess_token");
+
+TODO: {
+   local $TODO = 'until error for rename of authorize_url is removed';
+   is(eval {$auth->authorize_url},      "$site/au/htorize");
+}
+
+my $redirect = $auth->authorize(scope => 'read');
+ok(defined $redirect, 'authorize');
+isa_ok($redirect, 'URI');
+my %qf = $redirect->query_form;
+is($qf{response_type}, 'code');
+is($qf{scope}, 'read');
+
 is($auth->refresh_token_method, 'PUT');
 is($auth->refresh_token_url, "$site/oauth/refresh_token");
 
@@ -48,17 +59,16 @@ my $atp = $auth->access_token_params
   , type   => 'web_server'  # may still be required for 37signals
   );
 
-#warn Dumper $atp;
 is_deeply($atp,
- , { params => 'here',
-   , even   => 'more',
-   , type   => 'web_server',
-   , code   => ''
-   , grant_type    => 'authorization_code',
-   , redirect_uri  => undef,
-   , client_secret => 'my-secret',
-   , client_id     => 'my-id',
-   } );
+  { params => 'here',
+  , even   => 'more',
+  , type   => 'web_server',
+  , code   => ''
+  , grant_type    => 'authorization_code',
+  , redirect_uri  => undef,
+  , client_secret => 'my-secret',
+  , client_id     => 'my-id',
+  } );
 
 my $ua = $auth->user_agent;
 isa_ok($ua, 'LWP::UserAgent');

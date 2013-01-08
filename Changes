@@ -2,6 +2,23 @@
 === Version history of Net::OAuth2
 All changes by Mark Overmeer unless noted otherwise.
 
+version 0.51: Tue Jan  8 11:52:17 CET 2013
+	Fixes:
+	- the new ::WebServer::authorize() was conceptionally broken.
+	  Corrected and documented how to be used.
+	  Flagged by rt.cpan.org#82556 [Shmuel Fomberg]
+
+	Improvements:
+	- more info in the demo
+	- improved documentation (still not sufficient)
+	- rename ::AccessToken::to_string() into ::to_json()  Old name
+	  still usable.
+	- add ::WebServer::autorize_response() for convenience.
+	- remove unused dependency on Test::Mock::LWP::Dispatch
+	- add ::AccessToken::session_freeze() and ::session_thaw()
+	  Requested by rt.cpan.org#82554 [Shmuel Fomberg]
+	- error when people use old $profile->authorize_url()
+
 version 0.50: Mon Jan  7 12:39:16 CET 2013
 
 	New maintainer: Mark Overmeer
