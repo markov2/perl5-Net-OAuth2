@@ -64,6 +64,13 @@ provided redirection uris point to the same server the page where the
 link was found.
 
 =default grant_type 'authorization_code'
+
+=option  auto_save    CODE
+=default auto_save    <set token's changed flag>
+When a new token is received or refreshed, it usually needs to get
+save into a database or file.  The moment you receive a new token is
+clear, but being aware of refreshes in your main program is a hassle.
+Read more about configuring this in the L</DETAILS> section below.
 =cut
 
 sub init($)
@@ -72,6 +79,8 @@ sub init($)
     $self->SUPER::init($args);
     $self->{NOPW_redirect} = $args->{redirect_uri};
     $self->{NOPW_referer}  = $args->{referer};
+    $self->{NOPW_save}     = $args->{auto_save}
+      || sub { my $token = shift; $token->changed(1) };
     $self;
 }
 
@@ -80,11 +89,13 @@ sub init($)
 
 =method redirect_uri
 =method referer [URI]
+=method auto_save
 =cut
 
 sub redirect_uri() {shift->{NOPW_redirect}}
 sub referer(;$)
 {   my $s = shift; @_ ? $s->{NOPW_referer} = shift : $s->{NOPW_referer} }
+sub auto_save()    {shift->{NOPW_auto_save}}
 
 #--------------------
 =section Actions
@@ -186,8 +197,11 @@ sub get_access_token($@)
     $request->headers->header(Authorization => "Basic $basic");
     my $response = $self->request($request);
 
-    Net::OAuth2::AccessToken->new(client => $self
-      , $self->params_from_response($response, 'access token'));
+    Net::OAuth2::AccessToken->new
+      ( profile      => $self
+      , auto_refresh => !!$self->auto_save
+      , $self->params_from_response($response, 'access token')
+      );
 }
 
 =method update_access_token TOKEN, OPTIONS
@@ -270,18 +284,14 @@ sub build_request($$$)
 #--------------------
 =chapter DETAILS
 
+OAuth2 is a server-server protocol, not the usual client-server
+set-up. The consequence is that the protocol handlers on both sides will
+not wait for another during the communication: the remote uses callback
+urls to pass on the response.  Your side of the communication, your
+webservice, needs to re-group these separate processing steps into
+logical sessions.
+
 =section The process
-
-The B<main complication> does not show in the example in the SYNOPSIS,
-not in the plack example included in the distribution: your client session
-can not survive the shown steps: your application behaves like a server,
-not a client.  You need to implement losely coupled server-server
-communication, which is less straight-forward.
-
-First, your application must implement a persistent session (in a database
-or file), which may get called on any weird moment to pass on information.
-Your application must be visible from "outside" and use https.  More than
-enough complications.  Full example needed ;-)
 
 The client side of the process has
 three steps, nicely described in
@@ -305,6 +315,55 @@ The access token, usually a 'bearer' token, is added to each request to
 the resource you want to address.  The token may refresh itself when
 needed.
 =back
+
+=section Saving the token
+
+Your application must implement a persistent session, probably
+in a database or file.  The session information is kept in an
+M<Net::OAuth2::AccessToken> object, and does contain more facts than
+just the access token.
+
+Let's discuss the three approaches.
+
+=subsection no saving
+The Plack example contained in the CPAN distribution of this module
+is a single process server.  The tokens are administered in the memory
+of the process.  It is nice to test your settings, but probably not
+realistic for any real-life application.
+
+=subsection automatic saving
+
+When your own code is imperative:
+
+  my $auth = Net::OAuth2::Profile::WebServer->new
+    ( ...
+    , auto_save => \&save_session
+    );
+
+  sub save_session($$)
+  {   my ($profile, $token) = @_;
+      ...
+  }
+
+When your own code is object oriented:
+
+  sub init(...)
+  {  my ($self, ...) = @_;
+     my $auth = Net::OAuth2::Profile::WebServer->new
+       ( ...
+       , auto_save => sub { $self->save_session(@_) }
+       );
+  }
+
+  sub save_session($$)
+  {   my ($self, $profile, $token) = @_;
+      ...
+  }
+
+=subsection explicit saving
+
+In this case, do not use M<new(auto_save)>.
+
 =cut
 
 1;

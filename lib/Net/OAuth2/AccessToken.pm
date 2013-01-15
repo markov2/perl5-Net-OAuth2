@@ -13,7 +13,7 @@ my @session = qw/access_token token_type refresh_token expires_at
    scope state auto_refresh/;
 
 # This class name is kept for backwards compatibility: a better name
-# would have been: Net::OAuth2::BearerToken
+# would have been: Net::OAuth2::Session, with a ::Token::Bearer split-off.
 
 # In the future, most of this functionality will probably need to be
 # split-off in a base class ::Token, to be shared with a new extension
@@ -24,24 +24,25 @@ my @session = qw/access_token token_type refresh_token expires_at
  Net::OAuth2::AccessToken - OAuth2 bearer token
 
 =chapter SYNOPSIS
-  my $auth  = Net::OAuth2::Profile::WebServer->new(...);
+  my $auth    = Net::OAuth2::Profile::WebServer->new(...);
 
-  my $token = $auth->get_access_token($code, ...);
-  # $token is a Net::OAuth2::AccessToken
-  if($token->error)
-  {   print $token->error_description;
+  my $session = $auth->get_access_session($code, ...);
+  # $session is a Net::OAuth2::AccessToken object
+  if($session->error)
+  {   print $session->error_description;
   }
 
-  my $response = $token->get($request);
-  my $response = $token->get($header, $content);
-  print $token->to_string;  # JSON
+  my $response = $session->get($request);
+  my $response = $session->get($header, $content);
+  print $session->to_string;  # JSON
 
   # probably better to set new(auto_refresh), but you may do:
-  $token->refresh if $token->expired;
+  $session->refresh if $session->expired;
 
 =chapter DESCRIPTION
 This object represents a received (bearer) token, and offers ways to use it
-and maintain it.
+and maintain it.  A better name for this module would include <b>client
+or session</b>.
 
 A "bearer token" is an abstract proof of your existence: different
 services or potentially different physical servers are able to exchange
@@ -77,9 +78,13 @@ Auto-refresh the token at each use.
 =option  token_type TYPE
 =default token_type C<undef>
 
+=option  changed BOOLEAN
+=default changed <false>
+[0.52] The token (session) needs to be saved.
+
 =option  auto_refresh BOOLEAN
 =default auto_refresh <false>
-Refresh the token before each use.
+Refresh the token when expired.
 
 =option  error STRING
 =default error C<undef>
@@ -113,6 +118,7 @@ sub init($)
     $self->{NOA_scope}         = $args->{scope};
     $self->{NOA_token_type}    = $args->{token_type};
     $self->{NOA_auto_refresh}  = $args->{auto_refresh};
+    $self->{NOA_changed}       = $args->{changed};
 
     $self->{NOA_error}         = $args->{error};
     $self->{NOA_error_uri}     = $args->{error_uri};
@@ -129,6 +135,17 @@ You may pass any of the parameters for M<new()> as OPTIONS, to overrule
 the values inside the SESSION.
 
 =requires profile M<Net::OAuth2::Profile> object
+
+=example
+  my $auth    = Net::OAuth2::Profile::WebServer->new(...);
+  my $token   = $auth->get_access_token(...);
+  my $session = $token->freeze_session;
+  # now save $session in database or file
+  ...
+  # restore session
+  my $auth    = Net::OAuth2::Profile::WebServer->new(...);
+  my $token   = Net::OAuth2::AccessToken->session_thaw($session
+    , profile => $auth);
 =cut
 
 sub session_thaw($%)
@@ -140,8 +157,6 @@ sub session_thaw($%)
 #--------------
 =section Accessors
 
-=cut
-
 =method scope
 =method token_type
 =method profile
@@ -150,6 +165,15 @@ sub session_thaw($%)
 sub token_type() {shift->{NOA_token_type}}
 sub scope()      {shift->{NOA_scope}}
 sub profile()    {shift->{NOA_profile}}
+
+=method changed [BOOLEAN]
+[0.52] The session (token) needs to be saved, because any of the crucial
+parameters have been modified and C<auto_save> is not defined by
+the profile.
+=cut
+
+sub changed(;$)
+{   my $s = shift; @_ ? $s->{NOA_changed} = shift : $s->{NOA_changed} }
 
 =method access_token
 Returns the (base64 encoded version of the) access token.  The token
@@ -163,9 +187,15 @@ always need to be base64 encoded during transport.
 sub access_token()
 {   my $self = shift;
 
-    $self->refresh
-        if  $self->auto_refresh
-        || ($self->refresh_token && $self->expired);
+    if($self->expired)
+    {   delete $self->{NOA_access_token};
+        $self->{NOA_changed} = 1;
+        $self->refresh if $self->auto_refresh;
+    }
+    elsif($self->refresh_token)
+    {   # refresh token at each use
+        $self->refresh;
+    }
 
     $self->{NOA_access_token};
 }
@@ -227,9 +257,9 @@ Change the token.
 
 sub update_token($$$)
 {   my ($self, $token, $type, $exp) = @_;
-    $self->{NOA_access_token}   = $token;
-    $self->{NOA_token_type}    = $type if $type;
-    $self->{NOA_expires_at} = $exp;
+    $self->{NOA_access_token} = $token;
+    $self->{NOA_token_type}   = $type if $type;
+    $self->{NOA_expires_at}   = $exp;
     $token;
 }
 
@@ -253,21 +283,24 @@ This returns a SESSION (a flat HASH) containing all token parameters which
 needs to be saved to be able to restore this token later.  This SESSION
 can be passed to M<session_thaw()> to get revived.
 
+The C<changed> flag will be cleared by this method.
+
 Be sure that your storage is character-set aware.  For instance, you
 probably want to set 'mysql_enable_utf8' when you store this in a
-MySQL database.  JSON
+MySQL database.  Perl's JSON module will output utf8 by default.
 =cut
 
-sub freeze(%)
+sub session_freeze(%)
 {   my ($self, %args) = @_;
     my %data    = (net_oauth2_version => $VERSION);
     defined $self->{"NOA_$_"} && ($data{$_} = $self->{"NOA_$_"}) for @session;
+    $self->changed(0);
     \%data;
 }
 
 =method refresh
 Refresh the token, even if it has not expired yet.  Returned is the
-new access_token value.
+new access_token value, which may be undef on failure.
 =cut
 
 sub refresh()

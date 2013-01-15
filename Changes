@@ -2,6 +2,13 @@
 === Version history of Net::OAuth2
 All changes by Mark Overmeer unless noted otherwise.
 
+version 0.52: Tue Jan 15 13:21:04 CET 2013
+	Fixes:
+	- mistake ::AccessToken::freeze() -> ::AccessToken::session_freeze()
+
+	Improvements:
+	- document how to use freeze and thaw.
+
 version 0.51: Tue Jan  8 11:52:17 CET 2013
 	Fixes:
 	- the new ::WebServer::authorize() was conceptionally broken.
