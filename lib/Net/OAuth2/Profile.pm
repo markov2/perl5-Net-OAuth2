@@ -55,11 +55,23 @@ Additional parameters for the command.
 =default user_agent  <created internally>
 
 =option  token_scheme SCHEME
-=default token_scheme 'auth-header:OAuth'
+=default token_scheme 'auth-header:Bearer'
 See M<add_token()> for the supported SCHEMEs.  Scheme C<auth-header> is
 probably the only sane default, because that works with any kind of http
 requests, where the other options have limited or possible disturbing
 application.
+
+Before [0.53], the default was 'auth-header:OAuth'.
+
+Specify the method to submit authenticated requests to the service. By
+default, add the access token as a header, such as: "Authorization:
+Bearer TOKEN".  Some services require that the header will be different,
+i.e. "Authorization: OAuth TOKEN", for which case specify token_scheme
+'auth-header:Oauth'.
+
+To add the access token as a uri-parameter: 'uri-query:oauth_token'
+(in this case, the parameter name will be oauth_token)
+Merge the access token inside a form body via 'form-body:oauth_token'
 
 =option  site URI
 =default site C<undef>

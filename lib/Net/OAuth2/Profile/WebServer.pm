@@ -226,14 +226,14 @@ sub update_access_token($@)
       );
 
     my $resp  = $self->request($req);
-    my $data  = $self->params_from_response($resp, 'update token');
+    my %data  = $self->params_from_response($resp, 'update token');
 
-    my $token = $data->{access_token}
+    my $token = $data{access_token}
         or die "no access token found in refresh data";
 
-    my $type  = $data->{token_type};
+    my $type  = $data{token_type};
 
-    my $exp   = $data->{expires_in}
+    my $exp   = $data{expires_in}
         or die  "no expires_in found in refresh data";
 
     $access->update_token($token, $type, $exp+time());

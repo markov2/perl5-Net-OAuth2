@@ -68,9 +68,14 @@ Expire the token SECONDS after the initiation of this object.
 =option  access_token STRING
 =default access_token C<undef>
 
-=option  refresh_token BOOLEAN
+=option  refresh_always BOOLEAN
+=default refresh_always BOOLEAN
+[0.53] Auto-refresh the token at each use.
+
+=option  refresh_token STRING
 =default refresh_token C<false>
-Auto-refresh the token at each use.
+[0.53] Token which can be used to refresh the token, after it has
+expired or earlier.
 
 =option  scope URL
 =default scope C<undef>
@@ -115,6 +120,7 @@ sub init($)
 
     $self->{NOA_access_token}  = $args->{access_token};
     $self->{NOA_refresh_token} = $args->{refresh_token};
+    $self->{NOA_refresh_always}= $args->{refresh_always};
     $self->{NOA_scope}         = $args->{scope};
     $self->{NOA_token_type}    = $args->{token_type};
     $self->{NOA_auto_refresh}  = $args->{auto_refresh};
@@ -218,11 +224,13 @@ sub error_description() {shift->{NOA_error_descr}}
 =subsection Expiration
 
 =method refresh_token
+=method refresh_always
 =method auto_refresh
 =cut
 
-sub refresh_token() {shift->{NOA_refresh_token}}
-sub auto_refresh()  {shift->{NOA_auto_refresh}}
+sub refresh_token()  {shift->{NOA_refresh_token}}
+sub refresh_always() {shift->{NOA_refresh_always}}
+sub auto_refresh()   {shift->{NOA_auto_refresh}}
 
 =method expires_at [TIMESTAMP]
 Returns the expiration timestamp of this token (true) or C<undef> (false)
