@@ -2,6 +2,16 @@
 === Version history of Net::OAuth2
 All changes by Mark Overmeer unless noted otherwise.
 
+version 0.54: Thu Mar 28 10:55:51 CET 2013
+	Fixes:
+	- remove Build.PL
+
+	Improvements:
+	- rename demo/ into examples/psgi
+	- added t/30refresh.t by [Samuel Kaufman]
+	- Test::Mock::LWP::Dispatch is now optional, because it has a
+	  huge dependency tree via Moose.
+
 version 0.53: Mon Jan 28 12:01:26 CET 2013
 	Changes:
 	- default of token_scheme changed to standard compliant

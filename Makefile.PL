@@ -3,7 +3,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile
   ( NAME        => 'Net::OAuth2'
-  , VERSION     => '0.53'
+  , VERSION     => '0.54'
   , PREREQ_PM   =>
      { Test::More => 0
      , YAML => 0
@@ -13,6 +13,9 @@ WriteMakefile
      , Scalar::Util   => 0
      , HTTP::Request  => 0
      , HTTP::Status   => 0
+
+# optional
+#    , Test::Mock::LWP::Dispatch => 0
      }
   , AUTHOR      => 'Mark Overmeer'
   , ABSTRACT    => 'OAuth version 2 client'

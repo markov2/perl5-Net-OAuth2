@@ -1,11 +1,10 @@
-Build.PL
 Changes
 MANIFEST
 Makefile.PL
-demo/.htaccess
-demo/app.psgi
-demo/config.yml
-demo/dispatch.cgi
+examples/.htaccess
+examples/psgi/app.psgi
+examples/psgi/config.yml
+examples/psgi/dispatch.cgi
 lib/Net/OAuth2.pm
 lib/Net/OAuth2/AccessToken.pm
 lib/Net/OAuth2/Client.pm
@@ -15,4 +14,5 @@ lib/Net/OAuth2/Profile/WebServer.pm
 t/01use.t
 t/10web.t
 t/20req.t
+t/30refresh.t
 xt/99pod.t
