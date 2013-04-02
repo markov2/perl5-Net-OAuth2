@@ -26,7 +26,7 @@ my @session = qw/access_token token_type refresh_token expires_at
 =chapter SYNOPSIS
   my $auth    = Net::OAuth2::Profile::WebServer->new(...);
 
-  my $session = $auth->get_access_session($code, ...);
+  my $session = $auth->get_access_token($code, ...);
   # $session is a Net::OAuth2::AccessToken object
   if($session->error)
   {   print $session->error_description;
@@ -41,8 +41,8 @@ my @session = qw/access_token token_type refresh_token expires_at
 
 =chapter DESCRIPTION
 This object represents a received (bearer) token, and offers ways to use it
-and maintain it.  A better name for this module would include <b>client
-or session</b>.
+and maintain it.  A better name for this module would include B<client
+or session>.
 
 A "bearer token" is an abstract proof of your existence: different
 services or potentially different physical servers are able to exchange
@@ -132,7 +132,7 @@ sub init($)
     $self;
 }
 
-=method session_thaw SESSION, OPTIONS
+=c_method session_thaw SESSION, OPTIONS
 Pass in the output of a M<session_freeze()> call in the past (maybe even
 for an older version of this module) and get the token object revived. This
 SESSION is a HASH.
@@ -198,9 +198,8 @@ sub access_token()
         $self->{NOA_changed} = 1;
         $self->refresh if $self->auto_refresh;
     }
-    elsif($self->refresh_token)
-    {   # refresh token at each use
-        $self->refresh;
+    elsif($self->refresh_always)
+    {   $self->refresh;
     }
 
     $self->{NOA_access_token};

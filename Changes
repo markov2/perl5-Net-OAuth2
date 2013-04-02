@@ -2,6 +2,10 @@
 === Version history of Net::OAuth2
 All changes by Mark Overmeer unless noted otherwise.
 
+version 0.55: Tue Apr  2 16:13:33 CEST 2013
+	Fixes:
+	- refreshed token at each access.
+
 version 0.54: Thu Mar 28 10:55:51 CET 2013
 	Fixes:
 	- remove Build.PL
