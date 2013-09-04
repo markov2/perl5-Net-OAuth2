@@ -75,11 +75,11 @@ Read more about configuring this in the L</DETAILS> section below.
 
 sub init($)
 {   my ($self, $args) = @_;
-    $args->{grant_type}  ||= 'authorization_code';
+    $args->{grant_type}   ||= 'authorization_code';
     $self->SUPER::init($args);
-    $self->{NOPW_redirect} = $args->{redirect_uri};
-    $self->{NOPW_referer}  = $args->{referer};
-    $self->{NOPW_save}     = $args->{auto_save}
+    $self->{NOPW_redirect}  = $args->{redirect_uri};
+    $self->{NOPW_referer}   = $args->{referer};
+    $self->{NOPW_auto_save} = $args->{auto_save}
       || sub { my $token = shift; $token->changed(1) };
     $self;
 }
@@ -186,14 +186,16 @@ sub get_access_token($@)
 
     # rfc6749 section "2.3.1. Client Password"
     # header is always supported, client_id/client_secret may be.  We do both.
-    my $params  = $self->access_token_params(code => $code, @req_params);
-    my $request = $self->build_request
+    my $params   = $self->access_token_params(code => $code, @req_params);
+    my $request  = $self->build_request
       ( $self->access_token_method
       , $self->access_token_url
       , $params
       );
 
-    my $basic = encode_base64 "$params->{client_id}:$params->{client_secret}";
+    my $basic    = encode_base64 "$params->{client_id}:$params->{client_secret}"
+      , '';   # no new-lines!
+
     $request->headers->header(Authorization => "Basic $basic");
     my $response = $self->request($request);
 
