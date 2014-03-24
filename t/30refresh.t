@@ -17,7 +17,7 @@ BEGIN {
    plan skip_all => "Test::Mock::LWP::Dispatch not installed" if $@;
 
    Test::Mock::LWP::Dispatch->import;
-   plan tests => 4;
+   plan tests => 7;
 }
 
 my $at_response = {
@@ -67,3 +67,12 @@ ok my $access_token = Net::OAuth2::AccessToken->new(
 ok $access_token->refresh, 'access_token->refresh';
 is $access_token->access_token, $at_response->{access_token},
   'response access token has been set';
+
+is $access_token->refresh_token, $refresh_token_str,
+  'refresh token remains unchanged';
+
+$at_response->{refresh_token} = 'new-refresh-token';
+ok $access_token->refresh, 'access_token->refresh';
+is $access_token->refresh_token, $at_response->{refresh_token},
+  'new response refresh token has been set';
+

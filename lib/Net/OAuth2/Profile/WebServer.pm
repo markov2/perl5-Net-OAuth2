@@ -17,6 +17,7 @@ Net::OAuth2::Profile::WebServer - OAuth2 for web-server use
 
 =chapter SYNOPSIS
 
+  # See examples/psgi/
   my $auth = Net::OAuth2::Profile::WebServer->new
     ( name           => 'Google Contacts'
     , client_id      => $id
@@ -34,6 +35,8 @@ Net::OAuth2::Profile::WebServer - OAuth2 for web-server use
   # or, in Plack:   redirect $auth->authorize;
 
   # Prove your identity at the authorization server
+  # The $info are the parameters from the callback to your service, it
+  # will contain a 'code' value.
   my $access_token  = $auth->get_access_token($info->{code});
 
   # communicate with the resource serve
@@ -52,7 +55,7 @@ this man-page before you start implementing this interface.
 
 =section Constructors
 
-=c_method new OPTIONS
+=c_method new %options
 
 =option  redirect_uri URI
 =default redirect_uri C<undef>
@@ -87,9 +90,9 @@ sub init($)
 #-------------------
 =section Accessors
 
-=method redirect_uri
-=method referer [URI]
-=method auto_save
+=method redirect_uri 
+=method referer [$uri]
+=method auto_save 
 =cut
 
 sub redirect_uri() {shift->{NOPW_redirect}}
@@ -100,12 +103,12 @@ sub auto_save()    {shift->{NOPW_auto_save}}
 #--------------------
 =section Actions
 
-=method authorize OPTIONS
+=method authorize %options
 On initial contact of a new user, you have to redirect to the resource
 owner.  Somewhere in the near future, your application will be contacted
 again by the same user but then with an authorization grant code.
 
-Only the most common OPTIONS are listed... there may be more: read the
+Only the most common %options are listed... there may be more: read the
 docs on what your server expects.
 
 =option  state STRING
@@ -157,7 +160,7 @@ sub authorize_url()
     Carp::confess("do not use authorize_url() but authorize()! (since v0.50)");
 }
 
-=method authorize_response [REQUEST]
+=method authorize_response [$request]
 Convenience wrapper around M<authorize()>, to produce a complete
 M<HTTP::Response> object to be sent back.
 =cut
@@ -172,7 +175,7 @@ sub authorize_response(;$)
     $resp;
 }
 
-=method get_access_token CODE, OPTIONS
+=method get_access_token CODE, %options
 
 =option  client_id STRING
 =default client_id M<new(client_id)>
@@ -206,8 +209,8 @@ sub get_access_token($@)
       );
 }
 
-=method update_access_token TOKEN, OPTIONS
-Ask the server for a new token.  You may pass additional OPTIONS as
+=method update_access_token $token, %options
+Ask the server for a new token.  You may pass additional %options as
 pairs.  However, this method is often triggered automatically, in which
 case you can to use the C<refresh_token_params> option of M<new()>.
 
@@ -238,7 +241,7 @@ sub update_access_token($@)
     my $exp   = $data{expires_in}
         or die  "no expires_in found in refresh data";
 
-    $access->update_token($token, $type, $exp+time());
+    $access->update_token($token, $type, $exp+time(), $data{refresh_token});
 }
 
 sub authorize_params(%)

@@ -40,11 +40,11 @@ interface.
 
 =section Constructors
 
-=c_method new ID, SECRET, OPTIONS
-This object collects all OPTIONS to be used when M<web_server()> creates
+=c_method new $id, $secret, %options
+This object collects all %options to be used when M<web_server()> creates
 a profile.
 
-The ID will be translated into OPTION C<client_id>, and SECRET to
+The $id will be translated into OPTION C<client_id>, and $secret to
 C<client_secret>.
 =cut
 
@@ -62,9 +62,9 @@ sub new($$@)
 
 #----------------
 =section Accessors
-=method id
-=method secret
-=method user_agent
+=method id 
+=method secret 
+=method user_agent 
 =cut
 
 sub id()         {shift->{NOC_id}}
@@ -74,9 +74,9 @@ sub user_agent() {shift->{NOC_agent}}
 #----------------
 =section Actions
 
-=method web_server OPTIONS
+=method web_server %options
 Create a M<Net::OAuth2::Profile::WebServer> object, based on all options
-passed with M<new()>, overruled/extended by the OPTIONS passed here.
+passed with M<new()>, overruled/extended by the %options passed here.
 =cut
 
 sub web_server(@)
@@ -85,9 +85,9 @@ sub web_server(@)
 }
 
 
-=method password OPTIONS
+=method password %options
 Create a M<Net::OAuth2::Profile::Password> object, based on all options
-passed with M<new()>, overruled/extended by the OPTIONS passed here.
+passed with M<new()>, overruled/extended by the %options passed here.
 =cut
 
 sub password(@)

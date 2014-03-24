@@ -31,8 +31,8 @@ Base class for OAuth `profiles'.  Currently implemented:
 
 =section Constructors
 
-=c_method new OPTIONS
-Next to the OPTIONS listed below, it is possible to provide settings
+=c_method new %options
+Next to the %options listed below, it is possible to provide settings
 for each of the <${commands}> C<access_token>, C<protected_resource>,
 C<authorize>, and C<refresh_token>.  For each command, you can set
 
@@ -131,13 +131,13 @@ sub init($)
 
 #----------------
 =section Accessors
-=method id
-=method secret
-=method user_agent
-=method bearer_token_scheme
-=method site
-=method scope
-=method grant_type
+=method id 
+=method secret 
+=method user_agent 
+=method bearer_token_scheme 
+=method site 
+=method scope 
+=method grant_type 
 =cut
 
 sub id()         {shift->{NOP_id}}
@@ -156,8 +156,8 @@ sub bearer_token_scheme() {shift->{NOP_scheme}}
 
 =subsection HTTP
 
-=method request REQUEST, [MORE]
-Send the REQUEST (a M<HTTP::Request> object) to the server, calling
+=method request $request, [$more]
+Send the $request (a M<HTTP::Request> object) to the server, calling
 M<LWP::UserAgent> method C<request()>.  This method will NOT add
 security token information to the message.
 =cut
@@ -170,8 +170,8 @@ sub request($@)
 #$response;
 }
 
-=method request_auth TOKEN, (REQUEST | (METHOD, URI, [HEADER, CONTENT]))
-Send an authorized request: the TOKEN information gets included in the
+=method request_auth $token, <$request | <$method, $uri, [$header, $content]>>
+Send an authorized request: the $token information gets included in the
 request object.  Returns the answer (M<HTTP::Response>).
 
 =examples
@@ -205,9 +205,9 @@ sub request_auth(@)
 #--------------------
 =section Helpers
 
-=method site_url (URI|PATH), PARAMS
-Construct a URL to address the site.  When a full URI is passed, it appends
-the PARAMS as query parameters.  When a PATH is provided, it is relative
+=method site_url <$uri|$path>, $params
+Construct a URL to address the site.  When a full $uri is passed, it appends
+the $params as query parameters.  When a $path is provided, it is relative
 to M<new(site)>.
 =cut
 
@@ -220,9 +220,9 @@ sub site_url($@)
     $uri;
 }
 
-=method add_token REQUEST, TOKEN, SCHEME
-Merge information from the TOKEN into the REQUEST following the the
-bearer token SCHEME.  Supported schemes:
+=method add_token $request, $token, $scheme
+Merge information from the $token into the $request following the the
+bearer token $scheme.  Supported schemes:
 
 =over 4
 =item * auth-header or auth-header:REALM
@@ -274,8 +274,8 @@ sub add_token($$$)
     $request;
 }
 
-=method build_request METHOD, URI, PARAMS
-Returns a M<HTTP::Request> object.  PARAMS is an HASH or an ARRAY-of-PAIRS
+=method build_request $method, $uri, $params
+Returns a M<HTTP::Request> object.  $params is an HASH or an ARRAY-of-PAIRS
 of query parameters.
 =cut
 
@@ -314,9 +314,9 @@ sub build_request($$$)
     $request;
 }
 
-=method params_from_response RESPONSE, REASON
-Decode information from the RESPONSE by the server (an M<HTTP::Response>
-object). The REASON for this answer is used in error messages.
+=method params_from_response $response, $reason
+Decode information from the $response by the server (an M<HTTP::Response>
+object). The $reason for this answer is used in error messages.
 =cut
 
 sub params_from_response($$)

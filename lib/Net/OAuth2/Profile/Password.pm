@@ -21,7 +21,7 @@ Net::OAuth2::Profile::Password - OAuth2 for web-server use
 
 =section Constructors
 
-=c_method new OPTIONS
+=c_method new %options
 =default grant_type 'password'
 =cut
 
@@ -40,7 +40,7 @@ sub init($)
 =section Action
 =cut
 
-=method get_access_token OPTIONS
+=method get_access_token %options
 =requires username USER
 =requires password PASSWORD
 =cut

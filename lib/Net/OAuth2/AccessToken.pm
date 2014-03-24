@@ -21,7 +21,7 @@ my @session = qw/access_token token_type refresh_token expires_at
 #   http://datatracker.ietf.org/doc/draft-ietf-oauth-v2-http-mac/
 
 =chapter NAME
- Net::OAuth2::AccessToken - OAuth2 bearer token
+  Net::OAuth2::AccessToken - OAuth2 bearer token
 
 =chapter SYNOPSIS
   my $auth    = Net::OAuth2::Profile::WebServer->new(...);
@@ -53,7 +53,7 @@ someone logged-in while showing the token.
 
 =section Constructors
 
-=c_method new OPTIONS
+=c_method new %options
 
 =option  expires_at TIMESTAMP
 =default expires_at C<undef>
@@ -132,13 +132,13 @@ sub init($)
     $self;
 }
 
-=c_method session_thaw SESSION, OPTIONS
+=c_method session_thaw $session, %options
 Pass in the output of a M<session_freeze()> call in the past (maybe even
 for an older version of this module) and get the token object revived. This
-SESSION is a HASH.
+$session is a HASH.
 
-You may pass any of the parameters for M<new()> as OPTIONS, to overrule
-the values inside the SESSION.
+You may pass any of the parameters for M<new()> as %options, to overrule
+the values inside the $session.
 
 =requires profile M<Net::OAuth2::Profile> object
 
@@ -163,9 +163,9 @@ sub session_thaw($%)
 #--------------
 =section Accessors
 
-=method scope
-=method token_type
-=method profile
+=method scope 
+=method token_type 
+=method profile 
 =cut
 
 sub token_type() {shift->{NOA_token_type}}
@@ -181,7 +181,7 @@ the profile.
 sub changed(;$)
 {   my $s = shift; @_ ? $s->{NOA_changed} = shift : $s->{NOA_changed} }
 
-=method access_token
+=method access_token 
 Returns the (base64 encoded version of the) access token.  The token
 will get updated first, if it has expired and refresh_token is enabled,
 or when M<new(auto_refresh)> is set.
@@ -210,9 +210,9 @@ sub access_token()
 When the token is received (hence this object created) it be the
 result of an error.  It is the way the original code was designed...
 
-=method error
-=method error_uri
-=method error_description
+=method error 
+=method error_uri 
+=method error_description 
 =cut
 
 sub error()      {shift->{NOA_error}}
@@ -222,32 +222,32 @@ sub error_description() {shift->{NOA_error_descr}}
 #---------------
 =subsection Expiration
 
-=method refresh_token
-=method refresh_always
-=method auto_refresh
+=method refresh_token 
+=method refresh_always 
+=method auto_refresh 
 =cut
 
 sub refresh_token()  {shift->{NOA_refresh_token}}
 sub refresh_always() {shift->{NOA_refresh_always}}
 sub auto_refresh()   {shift->{NOA_auto_refresh}}
 
-=method expires_at [TIMESTAMP]
+=method expires_at [$timestamp]
 Returns the expiration timestamp of this token (true) or C<undef> (false)
 when it is not set.
 =cut
 
 sub expires_at() { shift->{NOA_expires_at} }
 
-=method expires_in
+=method expires_in 
 Returns the number of seconds left, before the token is expired.  That
 may be negative.
 =cut
 
 sub expires_in() { shift->expires_at - time() }
 
-=method expired [AFTER]
+=method expired [$after]
 Returns true when the token has an expiration set and that time has
-passed.  We use this token AFTER this check: to avoid the token to
+passed.  We use this token $after this check: to avoid the token to
 timeout inbetween, we take (by default 15 seconds) margin.
 =cut
 
@@ -258,22 +258,26 @@ sub expired(;$)
     $when < time() + $after;
 }
 
-=method update_token TOKEN, TOKENTYPE, EXPIRES_AT
+=method update_token $token, $tokentype, $expires_at, [$refresh_token]
 Change the token.
 =cut
 
-sub update_token($$$)
-{   my ($self, $token, $type, $exp) = @_;
-    $self->{NOA_access_token} = $token;
-    $self->{NOA_token_type}   = $type if $type;
-    $self->{NOA_expires_at}   = $exp;
+sub update_token($$$;$)
+{   my ($self, $token, $type, $exp, $refresh) = @_;
+    $self->{NOA_access_token}  = $token;
+    $self->{NOA_token_type}    = $type if $type;
+    $self->{NOA_expires_at}    = $exp;
+
+    $self->{NOA_refresh_token} = $refresh
+        if defined $refresh;
+
     $token;
 }
 
 #--------------
 =section Actions
 
-=method to_json
+=method to_json 
 Freeze this object into JSON.  The JSON syntax is also used by the OAuth2
 protocol, so a logical choice to provide.  However, generically, the
 M<session_freeze()> method provided.
@@ -285,7 +289,7 @@ sub to_json()
 }
 *to_string = \&to_json;  # until v0.50
 
-=method session_freeze OPTIONS
+=method session_freeze %options
 This returns a SESSION (a flat HASH) containing all token parameters which
 needs to be saved to be able to restore this token later.  This SESSION
 can be passed to M<session_thaw()> to get revived.
@@ -305,7 +309,7 @@ sub session_freeze(%)
     \%data;
 }
 
-=method refresh
+=method refresh 
 Refresh the token, even if it has not expired yet.  Returned is the
 new access_token value, which may be undef on failure.
 =cut
@@ -321,11 +325,11 @@ sub refresh()
 The token can be encoded in transport protocol in different ways. Using
 these method will add the token to the HTTP messages sent.
 
-=method request REQUEST
-=method get    URI, [HEADER, [CONTENT]]
-=method post   URI, [HEADER, [CONTENT]]
-=method delete URI, [HEADER, [CONTENT]]
-=method put    URI, [HEADER, [CONTENT]]
+=method request $request
+=method get $uri, [$header, [$content]]
+=method post $uri, [$header, [$content]]
+=method delete $uri, [$header, [$content]]
+=method put $uri, [$header, [$content]]
 =cut
 
 sub request{ my $s = shift; $s->profile->request_auth($s, @_) }
