@@ -2,6 +2,11 @@
 === Version history of Net::OAuth2
 All changes by Mark Overmeer unless noted otherwise.
 
+version 0.58: Wed May 28 23:17:09 CEST 2014
+
+	Improvements:
+	- generic accessor of ::AccessToken via attribute() [Sergey Lobanov]
+
 version 0.57: Mon Mar 24 09:33:07 CET 2014
 
 	Fixes:

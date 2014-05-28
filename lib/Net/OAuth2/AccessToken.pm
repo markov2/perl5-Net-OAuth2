@@ -129,6 +129,8 @@ sub init($)
     $self->{NOA_error}         = $args->{error};
     $self->{NOA_error_uri}     = $args->{error_uri};
     $self->{NOA_error_descr}   = $args->{error_description} || $args->{error};
+
+    $self->{NOA_attr}          = $args;
     $self;
 }
 
@@ -171,6 +173,14 @@ sub session_thaw($%)
 sub token_type() {shift->{NOA_token_type}}
 sub scope()      {shift->{NOA_scope}}
 sub profile()    {shift->{NOA_profile}}
+
+=method attribute NAME
+[0.58] Sometimes, the token gets attributes which are not standard; they
+have no official accessor (yet?).  You can get them with this generic
+accessor.
+=cut
+
+sub attribute($) { $_[0]->{NOA_attr}{$_[1]} }
 
 =method changed [BOOLEAN]
 [0.52] The session (token) needs to be saved, because any of the crucial
