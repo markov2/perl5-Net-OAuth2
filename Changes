@@ -2,6 +2,16 @@
 === Version history of Net::OAuth2
 All changes by Mark Overmeer unless noted otherwise.
 
+version 0.60:
+
+version 0.59: Tue Jun 24 23:56:23 CEST 2014
+
+	Fixes:
+	- do not send client_id and client_secret as parameters, because
+	  it will get refused by QQ Catalyst.
+	  rt.cpan.org#96454 [Scott Weisman]
+	- added 'state' passthru parameter to requests [Bas Bloemsaat]
+
 version 0.58: Wed May 28 23:17:09 CEST 2014
 
 	Improvements:

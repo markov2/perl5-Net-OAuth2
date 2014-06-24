@@ -30,13 +30,15 @@ get '/got/:site_id' => sub {
 
     my $content = "<h2>Access token retrieved successfully!</h2>\n"
                 . '<p>'.encode_entities($access_token->to_string)."</p>\n";
+    $content   .= "<h2>State passthru</h2>" . encode_entities(params->{state})
+        if params->{state};
 
     my $this_site = config->{sites}{$site_id};
     my $response  = $access_token->get($this_site->{protected_resource_url}
                  || $this_site->{protected_resource_path});
 
-    if ($response->is_success) {
-        $content .= "<h2>Protected resource retrieved successfully!</h2>\n"
+    if ($response->is_success)
+    {   $content .= "<h2>Protected resource retrieved successfully!</h2>\n"
                  .  '<p>'.encode_entities($response->decoded_content).'</p>';
     }
     else {
