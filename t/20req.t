@@ -28,7 +28,7 @@ isa_ok($auth, 'Net::OAuth2::Profile::WebServer');
 my @params = (c => 1, d => 2);
 my $req1 = $auth->build_request(GET => $base, \@params);
 isa_ok($req1, 'HTTP::Request', 'created request GET @params');
-is($req1->uri->as_string, 'http://my-site/a/b?c=1&d=2');
+like($req1->uri->as_string, qr!^http://my-site/a/b\?(?:c\=1\&d\=2|d\=2\&c\=1)!);
 
 my $req2 = $auth->build_request(GET => $base, {@params});  #params random order
 isa_ok($req2, 'HTTP::Request', 'created request GET %params');

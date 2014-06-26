@@ -3,7 +3,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile
   ( NAME        => 'Net::OAuth2'
-  , VERSION     => '0.59'
+  , VERSION     => '0.60'
   , PREREQ_PM   =>
      { Test::More => 0
      , YAML => 0
