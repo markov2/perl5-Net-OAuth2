@@ -2,11 +2,17 @@
 === Version history of Net::OAuth2
 All changes by Mark Overmeer unless noted otherwise.
 
+version 0.61: Mon Jun 30 08:53:41 CEST 2014
+
+	Fixes:
+	- another regresssion test t/10req.t failed due to hash order
+	  randomization.  [cpantesters]
+
 version 0.60: Thu Jun 26 09:46:53 CEST 2014
 
 	Fixes:
 	- regresssion test t/10req.t failed due to hash order randomization.
-	  [cpantesters]
+	  [cpantesters] & rt.cpan.org#96731 [Andreas König]
 
 version 0.59: Tue Jun 24 23:56:23 CEST 2014
 

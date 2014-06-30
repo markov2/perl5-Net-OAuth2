@@ -41,7 +41,7 @@ is($p2{d}, 2);
 my $req3 = $auth->build_request(POST => $base, \@params);
 isa_ok($req3, 'HTTP::Request', 'created request POST @params');
 is($req3->uri->as_string, 'http://my-site/a/b');
-is($req3->content, 'c=1&d=2', 'content');
+ok($req3->content eq 'c=1&d=2' || $req3->content eq 'd=2&c=1', 'content');
 is($req3->content_type, $ct_urlenc, 'content-type');
 
 ### DECODE RESPONSE
