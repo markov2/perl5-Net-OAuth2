@@ -2,6 +2,12 @@
 === Version history of Net::OAuth2
 All changes by Mark Overmeer unless noted otherwise.
 
+version 0.62: Wed 11 Nov 12:29:40 CET 2015
+
+	Improvements:
+	- typo.  rt.cpan.org#104332 [Christopher Hoskin, Debian]
+	- added contributed examples/google-refresh [Andreas Hernitscheck]
+
 version 0.61: Mon Jun 30 08:53:41 CEST 2014
 
 	Fixes:

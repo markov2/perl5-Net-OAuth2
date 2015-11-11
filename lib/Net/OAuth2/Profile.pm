@@ -97,7 +97,7 @@ rfc6749, the latter is optional.  However: many servers use the query
 parameters only.
 
 QQ Catalyst, on the other hand, does refuse requests with these parameters
-in the query.  So, with this flag explictly set to false, only the
+in the query.  So, with this flag explicitly set to false, only the
 Auth header gets included.
 =cut
 # old names still supported:
