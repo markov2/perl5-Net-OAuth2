@@ -340,7 +340,12 @@ sub build_request($$$)
     my $uri  = $request->uri;
     my $head = $request->headers;
     $request->protocol('HTTP/1.1');
-    $head->header(Host => $uri->host_port);
+
+    # 2016-01-15 Instagram does not like the portnumber to appear
+    # $head->header(Host => $uri->host_port);
+    my ($host, $port) = ($uri->host, $uri->port);
+    $host .= ':'.$port if $port != $uri->default_port;
+
     $head->header(Connection => 'Keep-Alive');
     $request;
 }
