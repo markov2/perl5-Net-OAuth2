@@ -44,10 +44,10 @@ sites:
                 access_token_path: '/token'
                 bearer_token_scheme: 'auth-header'
                 protected_resource_url: 'http://api-fotki.yandex.ru/api/me/'
-	instagram:
-		client_id: ''
-		client_secret: ''
-		site: 'https://api.instagram.com'
-		authorize_path: '/oauth/authorize'
-		access_token_path: '/oauth/access_token'
-		scope: 'comments relationships likes'
+        instagram:
+                client_id: ''
+                client_secret: ''
+                site: 'https://api.instagram.com'
+                authorize_path: '/oauth/authorize'
+                access_token_path: '/oauth/access_token'
+                scope: 'comments relationships likes'

@@ -1,4 +1,9 @@
+# This code is part of distribution Net-OAuth2.  Meta-POD processed
+# with OODoc into POD and HTML manual-pages.  See README.md
+# Copyright Mark Overmeer.  Licensed under the same terms as Perl itself.
+
 package Net::OAuth2::Profile;
+
 use warnings;
 use strict;
 

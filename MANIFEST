@@ -1,6 +1,7 @@
 Changes
 MANIFEST
 Makefile.PL
+README.md
 examples/.htaccess
 examples/psgi/app.psgi
 examples/psgi/config.yml
