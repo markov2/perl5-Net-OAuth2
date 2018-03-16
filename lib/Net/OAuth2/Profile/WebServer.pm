@@ -309,7 +309,7 @@ L<https://tools.ietf.org/html/rfc6749|RFC6749>
 =item 1. Send an authorization request to resource owner
 It needs a C<client_id>: usually the name of the service where you want
 get access to.  The answer is a redirect, based on the C<redirection_uri>
-which you usually pass on.  Additional C<scope> and C<state> parameters
+which you usually pass on.  Additional C<scope>, C<state>, and C<hd> parameters
 can be needed or useful.  The redirect will provide you with (amongst other
 things) a C<code> parameter.
 

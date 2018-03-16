@@ -91,6 +91,15 @@ Merge the access token inside a form body via 'form-body:oauth_token'
 =option  state STRING
 =default state C<undef>
 
+=option  hd STRING
+=default hd C<undef>
+Passthrough parameter that allows you to restrict one's login to a particular
+Google Apps domain. The application making the call should check that the
+returned value for hd matches the expected domain, as the user can change the
+hd parameter in the original request.
+
+See F<https://developers.google.com/identity/protocols/OpenIDConnect#hd-param>
+for more details.
 
 =requires grant_type STRING
 
@@ -138,6 +147,7 @@ sub init($)
         || $args->{bearer_token_scheme} || 'auth-header:Bearer';
     $self->{NOP_scope}       = $args->{scope};
     $self->{NOP_state}       = $args->{state};
+    $self->{NOP_hd}          = $args->{hd};
     $self->{NOP_method}      = $args->{access_token_method} || 'POST';
     $self->{NOP_acc_param}   = $args->{access_token_param} || [];
     $self->{NOP_init_params} = $args->{init_params};
@@ -165,6 +175,7 @@ sub init($)
 =method site 
 =method scope 
 =method state 
+=method hd 
 =method grant_type 
 =cut
 
@@ -176,6 +187,7 @@ sub user_agent() {shift->{NOP_agent}}
 sub site()       {shift->{NOP_site}}
 sub scope()      {shift->{NOP_scope}}
 sub state()      {shift->{NOP_state}}
+sub hd()         {shift->{NOP_hd}}
 sub grant_type() {shift->{NOP_grant_type}}
 
 sub bearer_token_scheme() {shift->{NOP_scheme}}
@@ -407,6 +419,7 @@ sub authorize_params(%)
     my %params = (@{$self->{NOP_authorize_param}}, @_);
     $params{scope}         ||= $self->scope;
     $params{state}         ||= $self->state;
+    $params{hd}            ||= $self->hd;
     $params{client_id}     ||= $self->id;
     \%params;
 }

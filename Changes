@@ -6,6 +6,9 @@ version 0.64:
 
 	Improvements:
 	- Converted to GIT, published on GitHub.
+	- added 'hd' passthru parameter to requests.
+	  Implemented by [Diego Garcia del Rio]  For usecases, see:
+	  https://developers.google.com/identity/protocols/OpenIDConnect#hd-param
 
 version 0.63: Mon 18 Jan 13:51:55 CET 2016
 

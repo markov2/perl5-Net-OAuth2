@@ -32,6 +32,7 @@ sites:
                 access_token_path: '/o/oauth2/token'
                 scope: 'openid profile email'
                 state: '1a2b3c'
+				hd: 'gmail.com'
                 protected_resource_url: 'https://www.googleapis.com/userinfo/v2/me'
         yandex:
                 name: 'Yandex Direct'
