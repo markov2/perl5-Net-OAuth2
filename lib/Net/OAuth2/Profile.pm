@@ -362,6 +362,7 @@ sub build_request($$$)
     # $head->header(Host => $uri->host_port);
     my ($host, $port) = ($uri->host, $uri->port);
     $host .= ':'.$port if $port != $uri->default_port;
+    $head->header(Host => $host);
 
     $head->header(Connection => 'Keep-Alive');
     $request;
