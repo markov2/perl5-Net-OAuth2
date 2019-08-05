@@ -359,10 +359,9 @@ sub build_request($$$)
     $request->protocol('HTTP/1.1');
 
     # 2016-01-15 Instagram does not like the portnumber to appear
-    # $head->header(Host => $uri->host_port);
-    my ($host, $port) = ($uri->host, $uri->port);
-    $host .= ':'.$port if $port != $uri->default_port;
-    $head->header(Host => $host);
+    # my ($host, $port) = ($uri->host, $uri->port);
+    # $host .= ':'.$port if $port != $uri->default_port;
+    $head->header(Host => $uri->host);
 
     $head->header(Connection => 'Keep-Alive');
     $request;
