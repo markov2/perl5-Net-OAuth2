@@ -358,8 +358,8 @@ sub build_request($$$)
     my $head = $request->headers;
     $request->protocol('HTTP/1.1');
 
-    my ($host, $port) = ($uri->host, $uri->port);
     # 2016-01-15 Instagram does not like the portnumber to appear
+    # my ($host, $port) = ($uri->host, $uri->port);
     # $host .= ':'.$port if $port != $uri->default_port;
     $head->header(Host => $uri->host);
 
