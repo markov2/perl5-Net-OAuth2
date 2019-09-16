@@ -153,7 +153,7 @@ the values inside the $session.
 =example
   my $auth    = Net::OAuth2::Profile::WebServer->new(...);
   my $token   = $auth->get_access_token(...);
-  my $session = $token->freeze_session;
+  my $session = $token->session_freeze;
   # now save $session in database or file
   ...
   # restore session
