@@ -9,7 +9,7 @@ use strict;
 
 use LWP::UserAgent ();
 use URI            ();
-use JSON           qw/decode_json/;
+use JSON::MaybeXS  qw/decode_json/;
 use Carp           qw/confess carp/;
 use Scalar::Util   qw/blessed/;
 use Encode         qw/encode/;
